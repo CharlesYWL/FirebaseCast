@@ -6,11 +6,17 @@ var name:string
  // https://firebase.google.com/docs/functions/typescript
 
 export const NewLikeNotification = functions.database.ref('/posts/{owner_id}/{post_it}/likes/{user_id}')
-    .onCreate((snapshot, context) => {
+    .onCreate(async (snapshot, context) => {
+
+        name = ""
         const ownerId = context.params.owner_id
         const userId = context.params.user_id
+        if (ownerId === userId) {
+            console.log('some like himself')
+            return null
+        }
 
-        getUsername(userId).then(function (val) {
+        await getUsername(userId).then(function (val) {
             console.log(val+' should be the liker')
             name = val
             console.log('after name = val, name is ' + name)
@@ -22,12 +28,12 @@ export const NewLikeNotification = functions.database.ref('/posts/{owner_id}/{po
 
         const payload = {
             notification: {
-                title: 'Some one likes your posts',
-                body: name + ' dianzan'
+                title: 'Post Notification',
+                body: name + ' likes your posts'
             }
         }
 
-        getFcmtoken(ownerId).then(function (val) {
+        await getFcmtoken(ownerId).then(function (val) {
             console.log(val + ' should recive message')
             return admin.messaging().sendToDevice(val,payload)
         }).catch(function (err) {
