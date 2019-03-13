@@ -9,7 +9,19 @@ export const NewLikeNotification = functions.database.ref('/posts/{owner_id}/{po
     .onCreate((snapshot, context) => {
         const ownerId = context.params.owner_id
         const userId = context.params.user_id
-        console.log(`New like ${ownerId} by ${userId}`)
+
+        const fcmtoken = getFcmtoken(ownerId)
+        console.log(`${fcmtoken} likes your posts`)
+        console.log(`${userId} likes your posts`)
 
         return null
+    });
+
+function getFcmtoken(uid:string) {
+    return admin.database()
+        .ref(`/users/${uid}/username`)
+        .once('value')
+        .then(snapshot => {
+            return snapshot.val()
         })
+}
