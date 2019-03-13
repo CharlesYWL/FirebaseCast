@@ -3,6 +3,7 @@ import * as admin from 'firebase-admin'
 admin.initializeApp()
 let name: string
 let comment_text: string
+const db = admin.database()
  // start writing firebase functions
  // https://firebase.google.com/docs/functions/typescript
 
@@ -51,9 +52,29 @@ export const NewCommentNotification = functions.database.ref('/posts/{owner_id}/
         const ownerId = context.params.owner_id
         const postId = context.params.post_id
         const commentId = context.params.comment_id
+        let userId = "laaaaa"
+        //let UserName:string
+        await db.ref(`/posts/${ownerId}/${postId}/comments/${commentId}/user_id`).once('value')
+            .then(function (doc) {
+                userId = doc.val()
+                console.log('get commenerID: ' + userId)
+                return userId
+            }).then(getUsername).then(function (val) {
+                name = val
+                return null
+            }).catch(function (err) {
+                console.error(err)
+            });
 
-        
 
+        /*await getUsername(userId).then(function (val) {
+            name = val
+            return null
+        }).catch(function (err) {
+            console.error(err)
+            }) */
+
+         
 
         await getComment(ownerId, postId, commentId).then(function (val) {
             console.log("the comment is " + val)
@@ -77,7 +98,7 @@ export const NewCommentNotification = functions.database.ref('/posts/{owner_id}/
             console.error(err)
         })
 
-        return Promise.all
+        return null
     });
 
 
@@ -98,17 +119,21 @@ async function getUsername(uid: string) {
         .once('value')
         .then(snapshot => {
             const temp = snapshot.val()
+            console.log('get Username: ' + temp + ' with val = ' + uid)
             return temp
         })
 }
 
-//async function getCommenterId(owner_id: string, post_id: string, cid: string) {
+//function getCommenterId(owner_id: string, post_id: string, cid: string) : boolean {
 //    return admin.database()
 //        .ref(`/posts/{ownder_id}/{post_id}/comments/${cid}/user_id`)
 //        .once('value')
 //        .then(snapshot => {
 //            const temp = snapshot.val()
-//            return temp
+//            if ()
+//                return true
+//            else
+//                return false
 //        })
 //}
 
