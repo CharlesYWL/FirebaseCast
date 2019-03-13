@@ -1,7 +1,8 @@
 import * as functions from 'firebase-functions'
 import * as admin from 'firebase-admin'
 admin.initializeApp()
-var name:string
+let name: string
+let comment_text: string
  // start writing firebase functions
  // https://firebase.google.com/docs/functions/typescript
 
@@ -17,9 +18,7 @@ export const NewLikeNotification = functions.database.ref('/posts/{owner_id}/{po
         }
 
         await getUsername(userId).then(function (val) {
-            console.log(val+' should be the liker')
             name = val
-            console.log('after name = val, name is ' + name)
             return null
         }).catch (function (err) {
             console.error(err)
@@ -43,6 +42,45 @@ export const NewLikeNotification = functions.database.ref('/posts/{owner_id}/{po
         return null
     });
 
+
+export const NewCommentNotification = functions.database.ref('/posts/{owner_id}/{post_id}/comments/{comment_id}')
+    .onCreate(async (snapshot, context) => {
+
+        name = ""
+        comment_text = ""
+        const ownerId = context.params.owner_id
+        const postId = context.params.post_id
+        const commentId = context.params.comment_id
+
+        
+
+
+        await getComment(ownerId, postId, commentId).then(function (val) {
+            console.log("the comment is " + val)
+            comment_text = val
+            return null
+        }).catch(function (err) {
+            console.error(err)
+        })
+
+
+        const payload = {
+            notification: {
+                title: 'Post Notification',
+                body: name + ' commented: ' + comment_text
+            }
+        }
+
+        await getFcmtoken(ownerId).then(function (val) {
+            return admin.messaging().sendToDevice(val, payload)
+        }).catch(function (err) {
+            console.error(err)
+        })
+
+        return Promise.all
+    });
+
+
 //return temp promise and should work in .then(function(val) {...})
  async function getFcmtoken(uid:string) {
     return admin.database()
@@ -63,3 +101,33 @@ async function getUsername(uid: string) {
             return temp
         })
 }
+
+//async function getCommenterId(owner_id: string, post_id: string, cid: string) {
+//    return admin.database()
+//        .ref(`/posts/{ownder_id}/{post_id}/comments/${cid}/user_id`)
+//        .once('value')
+//        .then(snapshot => {
+//            const temp = snapshot.val()
+//            return temp
+//        })
+//}
+
+//async function getCommenter(owner_id:string,post_id:string,cid: string) { 
+//    admin.database()
+//        .ref(`/posts/${owner_id}/${post_id}/comments/${cid}/username`)
+//        .once('value')
+//        .then(snapshot => {
+//            const temp = snapshot.val()
+//            return temp
+//        })
+//}
+async function getComment(owner_id: string, post_id: string, cid: string) {
+    return admin.database()
+        .ref(`/posts/${owner_id}/${post_id}/comments/${cid}/comment`)
+        .once('value')
+        .then(snapshot => {
+            const temp = snapshot.val()
+            return temp
+        })
+}
+
