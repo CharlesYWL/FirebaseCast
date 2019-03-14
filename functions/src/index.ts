@@ -67,13 +67,6 @@ export const NewCommentNotification = functions.database.ref('/posts/{owner_id}/
             });
 
 
-        /*await getUsername(userId).then(function (val) {
-            name = val
-            return null
-        }).catch(function (err) {
-            console.error(err)
-            }) */
-
          
 
         await getComment(ownerId, postId, commentId).then(function (val) {
@@ -93,7 +86,7 @@ export const NewCommentNotification = functions.database.ref('/posts/{owner_id}/
         }
 
         await getFcmtoken(ownerId).then(function (val) {
-            return admin.messaging().sendToDevice(val, payload)
+                return admin.messaging().sendToDevice(val, payload)
         }).catch(function (err) {
             console.error(err)
         })
@@ -101,7 +94,31 @@ export const NewCommentNotification = functions.database.ref('/posts/{owner_id}/
         return null
     });
 
+export const NewFollowNotification = functions.database.ref('/follows/{follower_id}/{TargetKey}')
+    .onCreate(async (snapshot, context) => {
+        console.log('snapshot.val() is: '+ snapshot.val())
+        const followId = context.params.follower_id
+        let followname = "123"
+        await getUsername(followId).then(function (val) {
+            followname = val
+                return null
+            }).catch(function (err) {
+                console.error(err)
+            });
+           
 
+        const payload = {
+            notification: {
+                title: 'Follow Notification',
+                body: followname + ' just followed You!'
+            }
+        }
+        await getFcmtoken(snapshot.val()).then(function (val) {
+            return admin.messaging().sendToDevice(val, payload)
+        }).catch(function (err) {
+            console.error(err)
+        })
+    });
 //return temp promise and should work in .then(function(val) {...})
  async function getFcmtoken(uid:string) {
     return admin.database()
